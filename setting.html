@@ -13,6 +13,14 @@
     <script src="js/polyfill.min.js"></script>
     <script src="js/vue.min.js"></script>
     <script src="js/element-ui@2.4.11/lib/index.js"></script>
+    <script type="importmap">
+    {  "imports": {
+        "supabase" : "https://cdn.jsdelivr.net/npm/@supabase/supabase-js"
+        }
+    }
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+    <script src="js/mf.js"></script>
     <script src="js/member.js"></script>
     <style>
       .el-input {
@@ -155,7 +163,7 @@
         <el-button size="small" @click="onAddMember" type="primary"
           >增加</el-button
         >
-        <el-button size="small" type="warning" @click="onImport">重置</el-button>
+        <el-button size="small" type="warning" @click="onImport">导入</el-button>
       </div>
     </div>
     <script>
@@ -246,7 +254,6 @@
             });
           },
           onChange: function(value) {
-            console.log(value);
             localStorage.setItem('batchNumber', value);
           },
           onSaveCell: function(row, key) {
@@ -257,7 +264,6 @@
             this.$set(row.editing, key, true);
             const parent = e.target.parentNode;
             this.$nextTick(function() {
-              // console.log(parent.innerHTML, row)
               parent.querySelector('input').focus();
             });
           },
@@ -293,18 +299,20 @@
           },
           onImport: function() {
             var vm = this;
-            this.$confirm('重新导入会覆盖现有人员列表', '确定重置吗？', {
+            this.$confirm('重新导入会覆盖现有人员列表', '确定导入吗？', {
               confirmButtonText: '确定',
               cancelButtonText: '取消',
               type: 'warning',
             }).then(function() {
               vm.memberSource = window.members.map(function(item) {
+                localStorage.setItem('members', JSON.stringify(this.members));
                 return {
                   name: item.name,
                   id: item.id,
                   editing: {},
                 };
               });
+              localStorage.setItem('members', JSON.stringify(this.members));
               vm.saveData();
             });
           },
@@ -321,23 +329,23 @@
           var awards = JSON.parse(localStorage.getItem('awards')) || [
           {
             name: '二等奖',
-            award: '办公室一日游',
-            count: 25,
+            award: '带薪休假一个月',
+            count: 10,
           }, 
           {
               name: '一等奖',
-              award: 'BMW X5',
-              count: 10,
+              award: '带薪上班一个月',
+              count: 5,
             },
             {
               name: '特等奖',
-              award: '深圳湾一号',
+              award: '无偿上班一个月',
               count: 1,
             },
           ];
           var members =
             JSON.parse(localStorage.getItem('members')) || window.members;
-          this.batchNumber = +localStorage.getItem('batchNumber') || 20;
+          this.batchNumber = +localStorage.getItem('batchNumber') || 5;
           this.tableData = awards.map(function(item) {
             return {
               name: item.name,

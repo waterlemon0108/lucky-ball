@@ -14,9 +14,18 @@
     />
     <script src="js/polyfill.min.js"></script>
     <script type="text/javascript" src="js/tagcanvas.min.js"></script>
+    <script type="importmap">
+    {  "imports": {
+        "supabase" : "https://cdn.jsdelivr.net/npm/@supabase/supabase-js"
+        }
+    }
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
     <script src="js/vue.min.js"></script>
+    <script src="js/mf.js"></script>
+    <script src="js/awards.js"></script>
     <script src="js/element-ui@2.4.11/lib/index.js"></script>
-    <script src="js/member.js"></script>
+     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
   </head>
   <body>
     <div id="app" class="bg">
@@ -73,8 +82,15 @@
           :disabled="running"
           type="warning"
           size="small"
-          class="el-icon-refresh"
           @click="onReplay"
+        >重置当前奖项</el-button>
+        <el-button
+          size="small"
+          :disabled="running"
+          type="warning"
+          size="small"
+          class="el-icon-refresh"
+          @click="onRestart"
           circle
         ></el-button>
         <span style="color: #fff; margin-left:10px;">{{players.length}}</span>
@@ -147,7 +163,9 @@
             var batchPlayers = [];
             for (var i = 0, ln = Math.min(N, todo, this.players.length); i < ln; i++) {
               var index = this.getRandomInt(0, this.players.length - 1);
-              batchPlayers.push(this.players.splice(index, 1)[0]);
+              var player = this.players.splice(index, 1)[0];
+              batchPlayers.push(player);
+              addAward(player.name, this.awards, this.currentAward);
             }
             // 
             // if (this.players.length === 0) {
@@ -196,7 +214,7 @@
           },
           onReplay: function() {
             var vm = this;
-            this.$confirm('重新抽奖会清空当前奖项的结果，无法撤销！', '确定要重新抽奖吗？', {
+            this.$confirm('重置会清空当前奖项的结果，无法撤销！', '确定要重置吗？', {
               confirmButtonText: '确定',
               cancelButtonText: '取消',
               type: 'warning',
@@ -206,6 +224,38 @@
               vm.players = vm.players.concat(p[0]);
               localStorage.setItem('players', JSON.stringify(vm.players))
               localStorage.setItem('result', JSON.stringify(vm.result));
+              this.awards = JSON.parse(localStorage.getItem('awards'))
+              resetAwards(this.awards, vm.currentAward)
+            });
+          },
+          onRestart: function() {
+            var vm = this;
+            this.$confirm('重新抽奖会清空所有奖项的结果，无法撤销！', '确定要重新抽奖吗？', {
+              confirmButtonText: '确定',
+              cancelButtonText: '取消',
+              type: 'warning',
+            }).then(function() {
+             function guid() {
+                var uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+                  var r = Math.random() * 16 | 0,
+                  v = c == 'x' ? r : (r & 0x3 | 0x8);
+                  return v.toString(16);
+                });
+               localStorage.setItem('guid', uuid);
+               return uuid;
+              };
+              vm.batchPlayers = [];
+              vm.result = [];
+              this.awards = JSON.parse(localStorage.getItem('awards'))
+              for (var i = 0; i < this.awards.length; i++) {
+                vm.result[i] = [];
+              }
+
+              vm.players = JSON.parse(localStorage.getItem('members'));
+              localStorage.setItem('players', localStorage.getItem('members'))
+              localStorage.setItem('result', JSON.stringify([]));
+              window.guid = guid();
+              resetAwards(this.awards, vm.currentAward)
             });
           },
           onKeyup: function(e) {
@@ -261,6 +311,7 @@
           console.log(this.rewards);
         },
         mounted: function() {
+          window.guid = localStorage.getItem('guid') || guid();
           var members = JSON.parse(localStorage.getItem('members')) || window.members;
           this.players = JSON.parse(localStorage.getItem('players')) || members;
           this.members = this.copy(members);
